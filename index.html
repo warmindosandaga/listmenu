@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+<title>Menu — Warmindo Sandaga</title>
+<meta name="theme-color" content="#0c3a35"/>
+<!-- Penghubung Manifest untuk Android/Chrome -->
+<link href="manifest.json" rel="manifest"/>
+<!-- Ikon Standar & Apple Touch Icon -->
+<link href="ikon.png" rel="icon" type="image/png"/>
+<link href="ikon.png" rel="apple-touch-icon"/>
+<link href="ikon.png" rel="apple-touch-icon" sizes="152x152"/>
+<link href="ikon.png" rel="apple-touch-icon" sizes="167x167"/>
+<link href="ikon.png" rel="apple-touch-icon" sizes="180x180"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --teal-950:#0c3a35;
+  --teal-800:#0f4c46;
+  --teal-700:#146258;
+  --teal-600:#1a7566;
+  --cream-50:#fbf5e4;
+  --cream-100:#f3e6bf;
+  --rust-600:#c1442d;
+  --rust-700:#a3371f;
+  --gold-500:#dba43c;
+  --gold-600:#c28f2c;
+  --gold-100:#faedcd;
+  --ink-900:#1b2a26;
+  --ink-600:#54655f;
+  --white:#fffdf7;
+  --line:#e4d5ab;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--cream-50);
+  color:var(--ink-900);
+  -webkit-tap-highlight-color:transparent;
+}
+h1,h2,h3,.display{font-family:'Bebas Neue',cursive;letter-spacing:0.5px;}
+
+/* ===== HERO ===== */
+.hero{
+  position:relative;
+  background:var(--teal-950);
+  background-image:
+    radial-gradient(circle at 88% -10%, rgba(219,164,60,0.35), transparent 55%),
+    radial-gradient(circle at 6% 110%, rgba(193,68,45,0.28), transparent 50%);
+  color:var(--cream-50);
+  padding:calc(28px + var(--safe-top)) 20px 46px;
+  overflow:hidden;
+  border-bottom:4px solid var(--gold-500);
+}
+.hero-steam{
+  position:absolute; top:-40px; right:-30px;
+  width:220px; height:220px; opacity:0.08;
+  pointer-events:none;
+}
+.hero-top{
+  display:flex; align-items:center; gap:14px; margin-bottom:22px;
+}
+.hero-top img{
+  width:52px;height:52px;border-radius:50%;
+  border:2px solid var(--gold-500);
+  object-fit:cover; background:var(--cream-100); flex-shrink:0;
+}
+.hero-top .eyebrow{
+  font-size:11px; letter-spacing:2px; color:var(--gold-500); font-weight:600;
+}
+.hero-top .brand{ font-size:15px; font-weight:700; color:var(--cream-50); }
+.hero h1{
+  font-size:clamp(42px,10vw,64px);
+  line-height:0.92;
+  margin:0 0 10px;
+  color:var(--cream-50);
+}
+.hero h1 em{ font-style:normal; color:var(--gold-500); }
+.hero p{
+  margin:0; max-width:44ch;
+  color:var(--cream-100);
+  font-size:14.5px; line-height:1.55;
+}
+
+/* ===== CATEGORY NAV ===== */
+.catnav-wrap{
+  position:sticky; top:0; z-index:20;
+  background:var(--cream-50);
+  border-bottom:1.5px solid var(--line);
+  box-shadow:0 6px 16px -10px rgba(12,58,53,0.25);
+}
+.catnav{
+  display:flex; gap:8px; overflow-x:auto;
+  padding:12px 16px; scrollbar-width:none;
+}
+.catnav::-webkit-scrollbar{display:none;}
+.catnav button{
+  flex:0 0 auto;
+  font-family:inherit; cursor:pointer;
+  background:var(--white);
+  border:1.5px solid var(--line);
+  color:var(--teal-800);
+  font-weight:600; font-size:13px;
+  padding:9px 16px; border-radius:100px;
+  white-space:nowrap;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.catnav button.active{
+  background:var(--teal-950); border-color:var(--teal-950); color:var(--cream-50);
+}
+
+/* ===== MAIN ===== */
+main{ max-width:1100px; margin:0 auto; padding:24px 16px calc(60px + var(--safe-bottom)); }
+.cat-section{ margin-bottom:38px; scroll-margin-top:70px; }
+.cat-heading{
+  display:flex; align-items:baseline; gap:12px;
+  margin:0 0 16px;
+}
+.cat-heading h2{
+  font-size:30px; color:var(--teal-950); margin:0;
+}
+.cat-heading .count{
+  font-size:12px; color:var(--ink-600); font-weight:600;
+  background:var(--gold-100); border:1px solid var(--line);
+  padding:3px 10px; border-radius:100px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(160px,1fr));
+  gap:16px;
+}
+.item-card{
+  background:var(--white);
+  border:1.5px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+  position:relative;
+  display:flex; flex-direction:column;
+  transition:transform .15s ease, box-shadow .15s ease;
+  opacity:0;
+  animation:itemPop .38s ease forwards;
+}
+.item-card:hover{ transform:translateY(-3px); box-shadow:0 14px 26px -18px rgba(12,58,53,0.4); }
+@keyframes itemPop{
+  from{ opacity:0; transform:translateY(10px) scale(.98); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+.cat-section{
+  opacity:0;
+  animation:sectionIn .3s ease forwards;
+}
+@keyframes sectionIn{
+  from{ opacity:0; }
+  to{ opacity:1; }
+}
+.item-photo{
+  aspect-ratio:1/1;
+  width:100%;
+  position:relative;
+  overflow:hidden;
+}
+.item-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+.item-photo::after{
+  content:'';
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:38%;
+  background:linear-gradient(to bottom, rgba(255,253,247,0) 0%, var(--white) 92%);
+  pointer-events:none;
+}
+.item-photo.placeholder{
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(155deg, var(--teal-700), var(--teal-950));
+}
+.item-photo.placeholder svg{ width:44%; height:44%; opacity:0.85; }
+.item-photo.placeholder::after{ content:none; }
+
+/* ===== HABIS (sold out) ===== */
+.item-card.sold-out .item-photo img{
+  filter:grayscale(1) contrast(0.95);
+  opacity:0.75;
+}
+.item-card.sold-out .item-photo.placeholder{
+  filter:grayscale(1);
+  opacity:0.6;
+}
+.item-card.sold-out .item-name,
+.item-card.sold-out .item-price{ opacity:0.55; }
+.soldout-badge{
+  position:absolute; top:8px; left:8px; z-index:2;
+  background:var(--rust-700); color:var(--cream-50);
+  font-size:10.5px; font-weight:700; letter-spacing:0.5px;
+  padding:4px 10px; border-radius:100px;
+  text-transform:uppercase;
+  box-shadow:0 4px 10px -4px rgba(0,0,0,0.4);
+}
+.item-body{
+  padding:11px 12px 13px;
+  margin-top:-14px;
+  position:relative; z-index:1;
+  display:flex; flex-direction:column; gap:6px; flex:1;
+}
+.item-name{
+  font-size:14.5px; font-weight:700; color:var(--ink-900);
+  line-height:1.3;
+}
+.item-price{
+  margin-top:auto;
+  font-family:'Bebas Neue',cursive; letter-spacing:0.4px;
+  font-size:19px; color:var(--rust-700);
+}
+.item-price::before{ content:'Rp '; font-size:12px; color:var(--ink-600); font-family:'Poppins',sans-serif; font-weight:600; }
+
+/* ===== EMPTY / LOADING ===== */
+.state-box{
+  text-align:center; padding:60px 20px; color:var(--ink-600);
+}
+.state-box .display{ font-size:26px; color:var(--teal-800); margin-bottom:6px; }
+.spinner{
+  width:30px;height:30px;border-radius:50%;
+  border:3px solid var(--line); border-top-color:var(--teal-700);
+  margin:0 auto 14px; animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== FOOTER ===== */
+footer{
+  text-align:center; padding:26px 20px calc(28px + var(--safe-bottom));
+  color:var(--ink-600); font-size:12px;
+  border-top:1.5px dashed var(--line);
+  max-width:1100px; margin:0 auto;
+}
+footer strong{ color:var(--teal-800); }
+
+@media (min-width:640px){
+  .grid{ grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hero-steam" viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="3">
+    <path d="M30 90 Q20 60 35 45 Q50 30 40 10" stroke-linecap="round"/>
+    <path d="M55 90 Q45 65 58 48 Q70 32 62 5" stroke-linecap="round"/>
+    <path d="M78 90 Q68 62 80 44" stroke-linecap="round"/>
+  </svg>
+  <div class="hero-top">
+    <img src="ikon.png" alt="Logo Warmindo Sandaga" onerror="this.style.display='none'"/>
+    <div>
+      <div class="eyebrow">DAFTAR MENU</div>
+      <div class="brand">Warmindo Sandaga</div>
+    </div>
+  </div>
+  <h1>lapar &amp; haus? <em>lihat</em><br/>menunya dulu.</h1>
+  <p>Semua menu & harga udah paling update, 
+    <p></p>kalau mau pesan bisa ke admin miniso atau langsung ke kasir kedai :)</p>
+</header>
+
+<div class="catnav-wrap">
+  <nav class="catnav" id="catNav"></nav>
+</div>
+
+<main id="main">
+  <div class="state-box" id="stateBox">
+    <div class="spinner"></div>
+    <div>Memuat menu...</div>
+  </div>
+</main>
+
+<footer>
+  Menu diperbarui otomatis langsung dari kasir · <strong>Warmindo Sandaga</strong>
+</footer>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============ FIREBASE CONFIG (sama dengan kasir, read-only) ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBMIOjbSOJl7QsqRIZ7ywOdplBMNQi1GCU",
+  authDomain: "kedaiwarmindo-9f399.firebaseapp.com",
+  projectId: "kedaiwarmindo-9f399",
+  storageBucket: "kedaiwarmindo-9f399.firebasestorage.app",
+  messagingSenderId: "437768743863",
+  appId: "1:437768743863:web:1af406325e70f7f5889632",
+  measurementId: "G-JRVJMF1PXQ"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Aktifkan cache offline: kunjungan berikutnya, menu langsung tampil dari
+// data terakhir yang tersimpan di HP pengunjung sambil nunggu update dari server.
+// (Kalau dibuka di banyak tab sekaligus, browser cuma bisa aktifin di 1 tab —
+// itu wajar, bukan error, tab lain tetap jalan normal cuma tanpa cache).
+db.enablePersistence({ synchronizeTabs: true }).catch(err=>{
+  console.warn('Firestore persistence tidak aktif:', err.code);
+});
+
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function formatRupiah(n){
+  n = Number(n)||0;
+  return n.toLocaleString('id-ID');
+}
+
+const PLACEHOLDER_ICON = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fbf5e4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 8c0-2.2 3.6-4 8-4s8 1.8 8 4-3.6 4-8 4-8-1.8-8-4Z"/>
+    <path d="M4 8v9c0 2.2 3.6 4 8 4s8-1.8 8-4V8"/>
+    <path d="M8 4.5c0 1.5 1 3 4 3s4-1.5 4-3"/>
+  </svg>`;
+
+let menuItems = [];
+let activeCategory = null;
+
+function renderCatNav(cats){
+  const nav = document.getElementById('catNav');
+  nav.innerHTML = cats.map(c =>
+    `<button data-cat="${escapeHtml(c)}" class="${c===activeCategory?'active':''}">${escapeHtml(c)}</button>`
+  ).join('');
+  nav.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeCategory = btn.dataset.cat;
+      renderCatNav(cats);
+      const target = document.getElementById('cat-'+slugify(activeCategory));
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+}
+
+function slugify(s){
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'lainnya';
+}
+
+function itemCard(item, indexInCategory){
+  const soldOut = !!item.soldOut;
+  const photo = item.imageUrl
+    ? `<div class="item-photo"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" loading="lazy" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/></div>`
+    : `<div class="item-photo placeholder">${PLACEHOLDER_ICON}</div>`;
+  // Delay bertahap tiap kartu biar kesannya muncul satu-satu dari atas
+  const delay = Math.min(indexInCategory * 45, 480);
+  return `
+    <div class="item-card ${soldOut?'sold-out':''}" style="animation-delay:${delay}ms">
+      ${soldOut?'<div class="soldout-badge">Habis</div>':''}
+      ${photo}
+      <div class="item-body">
+        <div class="item-name">${escapeHtml(item.name)}</div>
+        <div class="item-price">${formatRupiah(item.price)}</div>
+      </div>
+    </div>`;
+}
+
+function renderMenu(){
+  const main = document.getElementById('main');
+  if(!menuItems.length){
+    main.innerHTML = `<div class="state-box"><div class="display">Menu belum tersedia</div><div>Silakan cek lagi sebentar lagi.</div></div>`;
+    document.getElementById('catNav').innerHTML = '';
+    return;
+  }
+
+  const cats = [...new Set(menuItems.map(m=>m.category).filter(Boolean))];
+  if(!activeCategory || !cats.includes(activeCategory)) activeCategory = cats[0] || null;
+  renderCatNav(cats);
+
+  main.innerHTML = cats.map((cat, catIndex)=>{
+    const items = menuItems.filter(m=>m.category===cat);
+    return `
+      <section class="cat-section" id="cat-${slugify(cat)}" style="animation-delay:${Math.min(catIndex*80,320)}ms">
+        <div class="cat-heading">
+          <h2>${escapeHtml(cat)}</h2>
+          <span class="count">${items.length} menu</span>
+        </div>
+        <div class="grid">
+          ${items.map((item, i)=>itemCard(item, i)).join('')}
+        </div>
+      </section>`;
+  }).join('');
+}
+
+/* ============ REALTIME: MENU (read-only, sinkron dengan kasir) ============ */
+db.collection('menu').orderBy('name').onSnapshot(snap=>{
+  menuItems = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  renderMenu();
+}, err=>{
+  console.error(err);
+  document.getElementById('main').innerHTML = `<div class="state-box"><div class="display">Gagal memuat menu</div><div>Cek koneksi internet, lalu muat ulang halaman.</div></div>`;
+});
+</script>
+</body>
+</html>
