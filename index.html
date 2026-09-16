@@ -167,8 +167,21 @@ main{ max-width:1100px; margin:0 auto; padding:24px 16px calc(60px + var(--safe-
   width:100%;
   position:relative;
   overflow:hidden;
+  background:linear-gradient(100deg, var(--cream-100) 28%, var(--gold-100) 50%, var(--cream-100) 72%);
+  background-size:200% 100%;
+  animation:shimmer 1.4s ease-in-out infinite;
 }
-.item-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+.item-photo img{
+  width:100%; height:100%; object-fit:cover; display:block;
+  opacity:0;
+  transition:opacity .35s ease;
+}
+.item-photo img.loaded{ opacity:1; }
+.item-photo.loaded{ animation:none; background:none; }
+@keyframes shimmer{
+  0%{ background-position:200% 0; }
+  100%{ background-position:-200% 0; }
+}
 .item-photo::after{
   content:'';
   position:absolute;
@@ -180,6 +193,7 @@ main{ max-width:1100px; margin:0 auto; padding:24px 16px calc(60px + var(--safe-
 .item-photo.placeholder{
   display:flex; align-items:center; justify-content:center;
   background:linear-gradient(155deg, var(--teal-700), var(--teal-950));
+  animation:none;
 }
 .item-photo.placeholder svg{ width:44%; height:44%; opacity:0.85; }
 .item-photo.placeholder::after{ content:none; }
@@ -324,6 +338,10 @@ const PLACEHOLDER_ICON = `
 
 let menuItems = [];
 let activeCategory = null;
+let menuPhotoCache = {};      // {itemId: url}    -> sudah diambil & ada foto
+                               // {itemId: null}   -> sudah dicek, memang tidak ada foto
+                               // (belum ada key)   -> belum diambil sama sekali
+let fetchingPhotoIds = new Set();
 
 function renderCatNav(cats){
   const nav = document.getElementById('catNav');
@@ -344,11 +362,27 @@ function slugify(s){
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'lainnya';
 }
 
+function photoImgHtml(url, name){
+  return `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" loading="lazy" onload="this.classList.add('loaded');this.parentElement.classList.add('loaded')" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/>`;
+}
+
 function itemCard(item, indexInCategory){
   const soldOut = !!item.soldOut;
-  const photo = item.imageUrl
-    ? `<div class="item-photo"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" loading="lazy" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/></div>`
-    : `<div class="item-photo placeholder">${PLACEHOLDER_ICON}</div>`;
+  let photo;
+  if(item.imageUrl){
+    // Data lama yang belum sempat dimigrasi ke koleksi menuPhotos — tampilkan langsung.
+    photo = `<div class="item-photo">${photoImgHtml(item.imageUrl, item.name)}</div>`;
+  } else {
+    const cached = menuPhotoCache[item.id];
+    if(cached === undefined){
+      // Belum diambil: kotak shimmer, nanti diisi begitu fetch fotonya selesai.
+      photo = `<div class="item-photo" id="photo-${item.id}"></div>`;
+    } else if(cached){
+      photo = `<div class="item-photo">${photoImgHtml(cached, item.name)}</div>`;
+    } else {
+      photo = `<div class="item-photo placeholder">${PLACEHOLDER_ICON}</div>`;
+    }
+  }
   // Delay bertahap tiap kartu biar kesannya muncul satu-satu dari atas
   const delay = Math.min(indexInCategory * 45, 480);
   return `
@@ -360,6 +394,32 @@ function itemCard(item, indexInCategory){
         <div class="item-price">${formatRupiah(item.price)}</div>
       </div>
     </div>`;
+}
+
+/* Ambil foto satu-per-satu dari koleksi 'menuPhotos' (bukan ikut nunggu di listener utama),
+   supaya nama & harga tampil duluan lalu tiap foto muncul begitu masing-masing selesai. */
+function fetchMissingPhotos(){
+  menuItems.forEach(item=>{
+    if(item.imageUrl) return; // sudah tampil langsung (foto lama belum dimigrasi)
+    if(menuPhotoCache[item.id] !== undefined || fetchingPhotoIds.has(item.id)) return;
+    fetchingPhotoIds.add(item.id);
+    db.collection('menuPhotos').doc(item.id).get().then(doc=>{
+      const url = doc.exists ? ((doc.data()||{}).imageUrl || null) : null;
+      menuPhotoCache[item.id] = url;
+      fetchingPhotoIds.delete(item.id);
+      const slot = document.getElementById('photo-'+item.id);
+      if(!slot) return; // sudah tak ada di layar (mis. kategori aktif berubah lewat re-render)
+      if(url){
+        slot.innerHTML = photoImgHtml(url, item.name);
+      } else {
+        slot.classList.add('placeholder');
+        slot.innerHTML = PLACEHOLDER_ICON;
+      }
+    }).catch(err=>{
+      console.error(err);
+      fetchingPhotoIds.delete(item.id);
+    });
+  });
 }
 
 function renderMenu(){
@@ -387,9 +447,15 @@ function renderMenu(){
         </div>
       </section>`;
   }).join('');
+
+  fetchMissingPhotos();
 }
 
-/* ============ REALTIME: MENU (read-only, sinkron dengan kasir) ============ */
+/* ============ REALTIME: MENU (read-only, sinkron dengan kasir) =============
+   Koleksi 'menu' sengaja hanya berisi nama/kategori/harga/status — TANPA foto —
+   jadi listener ini ringan dan langsung tampil begitu kasir menyimpan sesuatu.
+   Fotonya sendiri diambil belakangan per-item dari koleksi 'menuPhotos' lewat
+   fetchMissingPhotos(), supaya nggak ikut memperlambat data teks. ============ */
 db.collection('menu').orderBy('name').onSnapshot(snap=>{
   menuItems = snap.docs.map(d=>({id:d.id, ...d.data()}));
   renderMenu();
