@@ -162,6 +162,9 @@ main{ max-width:1100px; margin:0 auto; padding:24px 16px calc(60px + var(--safe-
   from{ opacity:0; }
   to{ opacity:1; }
 }
+/* Setelah render pertama, update realtime tidak mengulang animasi masuk */
+main.no-anim .cat-section,
+main.no-anim .item-card{ animation:none; opacity:1; }
 .item-photo{
   aspect-ratio:1/1;
   width:100%;
@@ -342,6 +345,7 @@ let menuPhotoCache = {};      // {itemId: url}    -> sudah diambil & ada foto
                                // {itemId: null}   -> sudah dicek, memang tidak ada foto
                                // (belum ada key)   -> belum diambil sama sekali
 let fetchingPhotoIds = new Set();
+let hasRenderedMenu = false;
 
 function renderCatNav(cats){
   const nav = document.getElementById('catNav');
@@ -352,6 +356,8 @@ function renderCatNav(cats){
     btn.addEventListener('click', ()=>{
       activeCategory = btn.dataset.cat;
       renderCatNav(cats);
+      prioritizeCategory(activeCategory);
+      pumpPhotoQueue();
       const target = document.getElementById('cat-'+slugify(activeCategory));
       if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
     });
@@ -363,7 +369,7 @@ function slugify(s){
 }
 
 function photoImgHtml(url, name){
-  return `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" loading="lazy" onload="this.classList.add('loaded');this.parentElement.classList.add('loaded')" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/>`;
+  return `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" decoding="async" onload="this.classList.add('loaded');this.parentElement.classList.add('loaded')" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/>`;
 }
 
 function itemCard(item, indexInCategory){
@@ -396,30 +402,119 @@ function itemCard(item, indexInCategory){
     </div>`;
 }
 
-/* Ambil foto satu-per-satu dari koleksi 'menuPhotos' (bukan ikut nunggu di listener utama),
-   supaya nama & harga tampil duluan lalu tiap foto muncul begitu masing-masing selesai. */
-function fetchMissingPhotos(){
-  menuItems.forEach(item=>{
-    if(item.imageUrl) return; // sudah tampil langsung (foto lama belum dimigrasi)
-    if(menuPhotoCache[item.id] !== undefined || fetchingPhotoIds.has(item.id)) return;
+/* ===== ANTREAN FOTO: diambil satu-per-satu sesuai URUTAN TAMPILAN (atas -> bawah) =====
+   Sebelumnya semua foto di-fetch sekaligus berdasarkan urutan nama, jadi yang muncul
+   duluan acak. Sekarang antrean disusun sesuai urutan kategori & kartu di layar, dan
+   hanya beberapa fetch berjalan bersamaan (PHOTO_CONCURRENCY) supaya foto paling atas
+   selalu dapat giliran & bandwidth lebih dulu. Tiap foto langsung tampil begitu
+   selesai, tanpa menunggu foto lain. */
+const PHOTO_CONCURRENCY = 3;
+let photoQueue = [];
+let activePhotoFetches = 0;
+
+/* Foto yang sudah siap tidak langsung ditempel semua, tapi masuk antrean tampil:
+   dimunculkan SATU per satu sesuai urutan di layar (atas -> bawah) dengan jeda kecil. */
+const REVEAL_GAP_MS = 110;
+let revealQueue = [];      // [{order, apply}]
+let revealTimer = null;
+let photoOrder = {};       // {itemId: urutan tampil di layar}
+
+function enqueueReveal(item, apply){
+  revealQueue.push({ order: photoOrder[item.id] ?? 1e9, apply });
+  revealQueue.sort((x,y)=>x.order - y.order);
+  if(!revealTimer) drainReveal();
+}
+function drainReveal(){
+  const next = revealQueue.shift();
+  if(!next){ revealTimer = null; return; }
+  next.apply();
+  revealTimer = setTimeout(drainReveal, REVEAL_GAP_MS);
+}
+
+function showPhoto(item, url){
+  const slot = document.getElementById('photo-'+item.id);
+  if(!slot) return;
+  if(url){
+    const img = new Image();
+    img.alt = item.name;
+    img.decoding = 'async';
+    img.onload = ()=>{
+      // gambar sudah selesai dimuat & di-decode, tinggal antre untuk ditampilkan
+      enqueueReveal(item, ()=>{
+        const s = document.getElementById('photo-'+item.id); // slot terbaru (bisa sudah re-render)
+        if(!s) return;
+        s.innerHTML = '';
+        s.appendChild(img);
+        requestAnimationFrame(()=>{ img.classList.add('loaded'); s.classList.add('loaded'); });
+      });
+    };
+    img.onerror = ()=>{ console.error('[foto] gambar gagal dimuat untuk', item.name, '— cek isi imageUrl'); showPhoto(item, null); };
+    img.src = url;
+  } else {
+    enqueueReveal(item, ()=>{
+      const s = document.getElementById('photo-'+item.id);
+      if(!s) return;
+      s.classList.add('placeholder');
+      s.innerHTML = PLACEHOLDER_ICON;
+    });
+  }
+}
+
+const photoRetries = {};   // {itemId: jumlah percobaan ulang}
+const MAX_PHOTO_RETRY = 3;
+
+function pumpPhotoQueue(){
+  while(activePhotoFetches < PHOTO_CONCURRENCY && photoQueue.length){
+    const item = photoQueue.shift();
+    if(menuPhotoCache[item.id] !== undefined || fetchingPhotoIds.has(item.id)) continue;
     fetchingPhotoIds.add(item.id);
+    activePhotoFetches++;
     db.collection('menuPhotos').doc(item.id).get().then(doc=>{
       const url = doc.exists ? ((doc.data()||{}).imageUrl || null) : null;
+      if(!doc.exists) console.warn('[foto] dokumen menuPhotos/'+item.id+' tidak ada ('+item.name+')');
+      else if(!url) console.warn('[foto] menuPhotos/'+item.id+' ada, tapi field "imageUrl" kosong/tidak ditemukan');
       menuPhotoCache[item.id] = url;
-      fetchingPhotoIds.delete(item.id);
-      const slot = document.getElementById('photo-'+item.id);
-      if(!slot) return; // sudah tak ada di layar (mis. kategori aktif berubah lewat re-render)
-      if(url){
-        slot.innerHTML = photoImgHtml(url, item.name);
-      } else {
-        slot.classList.add('placeholder');
-        slot.innerHTML = PLACEHOLDER_ICON;
-      }
+      showPhoto(item, url);
     }).catch(err=>{
-      console.error(err);
+      console.error('[foto] gagal ambil menuPhotos/'+item.id+':', err.code || '', err.message || err);
+      const n = (photoRetries[item.id] = (photoRetries[item.id]||0) + 1);
+      if(n <= MAX_PHOTO_RETRY){
+        // coba lagi nanti (mis. koneksi sempat putus), slot tetap shimmer
+        setTimeout(()=>{ photoQueue.push(item); pumpPhotoQueue(); }, 1500 * n);
+      } else {
+        showPhoto(item, null);
+      }
+    }).finally(()=>{
       fetchingPhotoIds.delete(item.id);
+      activePhotoFetches--;
+      pumpPhotoQueue();
+    });
+  }
+}
+
+// Susun antrean sesuai urutan di layar: kategori pertama -> item pertama, dst.
+function fetchMissingPhotos(cats){
+  const ordered = [];
+  photoOrder = {};
+  let n = 0;
+  cats.forEach(cat=>{
+    menuItems.forEach(item=>{
+      if(item.category !== cat) return;
+      photoOrder[item.id] = n++;
+      if(item.imageUrl) return; // foto lama sudah tampil langsung
+      if(menuPhotoCache[item.id] !== undefined) return;
+      ordered.push(item);
     });
   });
+  photoQueue = ordered;
+  pumpPhotoQueue();
+}
+
+// Saat user pindah kategori lewat tombol nav, foto kategori itu didahulukan.
+function prioritizeCategory(cat){
+  const first = photoQueue.filter(i=>i.category===cat);
+  if(!first.length) return;
+  photoQueue = [...first, ...photoQueue.filter(i=>i.category!==cat)];
 }
 
 function renderMenu(){
@@ -448,7 +543,9 @@ function renderMenu(){
       </section>`;
   }).join('');
 
-  fetchMissingPhotos();
+  main.classList.toggle('no-anim', hasRenderedMenu);
+  hasRenderedMenu = true;
+  fetchMissingPhotos(cats);
 }
 
 /* ============ REALTIME: MENU (read-only, sinkron dengan kasir) =============
