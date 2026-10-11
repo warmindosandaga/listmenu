@@ -211,7 +211,7 @@ main.no-anim .item-card{ animation:none; opacity:1; }
   animation:none;
 }
 .item-photo.placeholder::after{ content:none; }
-.nophoto-stamp{
+.nophoto-stamp, .loading-stamp{
   --stamp:#b3553f;
   transform:rotate(-5deg);
   display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -223,11 +223,22 @@ main.no-anim .item-card{ animation:none; opacity:1; }
   background:rgba(179,85,63,0.05);
   opacity:0.78;
 }
-.nophoto-stamp svg{ width:24px; height:24px; opacity:0.9; }
-.nophoto-stamp span{
+.nophoto-stamp svg, .loading-stamp svg{ width:24px; height:24px; opacity:0.9; }
+.nophoto-stamp span, .loading-stamp span{
   font-size:9.5px; font-weight:700; line-height:1.45;
   letter-spacing:1.2px; text-transform:uppercase; text-align:center;
 }
+
+/* Stempel saat gambar masih dimuat: di tengah kotak foto, ikon berputar pelan */
+.loading-stamp{
+  --stamp:var(--teal-700);
+  position:absolute; top:50%; left:50%; z-index:1;
+  transform:translate(-50%,-50%) rotate(-5deg);
+  background:rgba(255,253,247,0.7);
+  pointer-events:none;
+}
+.loading-stamp svg{ animation:spin 1.1s linear infinite; }
+.item-photo.loaded .loading-stamp{ display:none; }
 
 /* ===== HABIS (sold out) ===== */
 .item-card.sold-out .item-photo img{
@@ -351,6 +362,8 @@ function formatRupiah(n){
 
 const PLACEHOLDER_ICON = `<div class="nophoto-stamp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h2.5l1.5-2h5l1.5 2H20v10H4z"/><circle cx="12" cy="13" r="3"/><path d="M3 3l18 18"/></svg><span>Gambar belum<br>di-upload admin</span></div>`;
 
+const LOADING_STAMP = `<div class="loading-stamp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9" /></svg><span>Memuat<br>gambar</span></div>`;
+
 let menuItems = [];
 let activeCategory = null;
 let menuPhotoCache = {};      // {itemId: url}    -> sudah diambil & ada foto
@@ -409,7 +422,7 @@ function slugify(s){
 }
 
 function photoImgHtml(url, name){
-  return `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" decoding="async" onload="this.classList.add('loaded');this.parentElement.classList.add('loaded')" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/>`;
+  return `${LOADING_STAMP}<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" decoding="async" onload="this.classList.add('loaded');this.parentElement.classList.add('loaded')" onerror="this.parentElement.outerHTML='&lt;div class=&quot;item-photo placeholder&quot;&gt;${PLACEHOLDER_ICON.replace(/"/g,'&quot;')}&lt;/div&gt;'"/>`;
 }
 
 function itemCard(item, indexInCategory){
@@ -422,7 +435,7 @@ function itemCard(item, indexInCategory){
     const cached = menuPhotoCache[item.id];
     if(cached === undefined){
       // Belum diambil: kotak shimmer, nanti diisi begitu fetch fotonya selesai.
-      photo = `<div class="item-photo" id="photo-${item.id}"></div>`;
+      photo = `<div class="item-photo" id="photo-${item.id}">${LOADING_STAMP}</div>`;
     } else if(cached){
       photo = `<div class="item-photo">${photoImgHtml(cached, item.name)}</div>`;
     } else {
