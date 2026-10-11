@@ -432,7 +432,7 @@ function itemCard(item, indexInCategory){
   // Delay bertahap tiap kartu biar kesannya muncul satu-satu dari atas
   const delay = Math.min(indexInCategory * 45, 480);
   return `
-    <div class="item-card ${soldOut?'sold-out':''}" style="animation-delay:${delay}ms">
+    <div class="item-card ${soldOut?'sold-out':''}" data-id="${escapeHtml(item.id)}" style="animation-delay:${delay}ms">
       ${soldOut?'<div class="soldout-badge">Habis</div>':''}
       ${photo}
       <div class="item-body">
@@ -440,6 +440,42 @@ function itemCard(item, indexInCategory){
         <div class="item-price">${formatRupiah(item.price)}</div>
       </div>
     </div>`;
+}
+
+/* ===== URUTAN MENU =====
+   1) yang tersedia di atas, yang HABIS di bawah
+   2) di tiap kelompok: yang sudah ada gambarnya dulu, baru yang belum
+   3) sisanya urut abjad.
+   Status foto baru diketahui setelah fetch selesai, jadi sebelum itu dianggap "ada foto";
+   begitu semua foto selesai dicek, kartu dirapikan SEKALI (resortGrids). */
+function hasPhoto(item){
+  if(item.imageUrl) return true;
+  return menuPhotoCache[item.id] !== null;   // undefined (belum dicek) dianggap ada
+}
+function compareItems(a,b){
+  return (a.soldOut?1:0) - (b.soldOut?1:0)
+      || Number(hasPhoto(b)) - Number(hasPhoto(a))
+      || String(a.name||'').localeCompare(String(b.name||''), 'id', {sensitivity:'base'});
+}
+let resortTimer = null;
+function scheduleResort(){
+  clearTimeout(resortTimer);
+  resortTimer = setTimeout(()=>{
+    if(activePhotoFetches > 0 || photoQueue.length || revealQueue.length){ scheduleResort(); return; }
+    resortGrids();
+  }, 600);
+}
+function resortGrids(){
+  menuItems.sort(compareItems);
+  document.querySelectorAll('.cat-section[data-cat]').forEach(sec=>{
+    const grid = sec.querySelector('.grid');
+    if(!grid) return;
+    const cat = sec.dataset.cat;
+    menuItems.filter(m=>m.category===cat).forEach(item=>{
+      const card = grid.querySelector('.item-card[data-id="'+item.id.replace(/"/g,'')+'"]');
+      if(card) grid.appendChild(card);   // appendChild memindahkan kartu sesuai urutan baru
+    });
+  });
 }
 
 /* ===== ANTREAN FOTO: diambil satu-per-satu sesuai URUTAN TAMPILAN (atas -> bawah) =====
@@ -466,7 +502,7 @@ function enqueueReveal(item, apply){
 }
 function drainReveal(){
   const next = revealQueue.shift();
-  if(!next){ revealTimer = null; return; }
+  if(!next){ revealTimer = null; scheduleResort(); return; }
   next.apply();
   revealTimer = setTimeout(drainReveal, REVEAL_GAP_MS);
 }
@@ -488,7 +524,7 @@ function showPhoto(item, url){
         requestAnimationFrame(()=>{ img.classList.add('loaded'); s.classList.add('loaded'); });
       });
     };
-    img.onerror = ()=>{ console.error('[foto] gambar gagal dimuat untuk', item.name, '— cek isi imageUrl'); showPhoto(item, null); };
+    img.onerror = ()=>{ console.error('[foto] gambar gagal dimuat untuk', item.name, '— cek isi imageUrl'); menuPhotoCache[item.id] = null; showPhoto(item, null); };
     img.src = url;
   } else {
     enqueueReveal(item, ()=>{
@@ -561,6 +597,7 @@ function prioritizeCategory(cat){
 
 function renderMenu(){
   const main = document.getElementById('main');
+  menuItems.sort(compareItems);
   if(!menuItems.length){
     main.innerHTML = `<div class="state-box"><div class="display">Menu belum tersedia</div><div>Silakan cek lagi sebentar lagi.</div></div>`;
     document.getElementById('catNav').innerHTML = '';
