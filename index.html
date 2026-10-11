@@ -48,91 +48,103 @@ body{
 }
 h1,h2,h3,.display{font-family:'Bebas Neue',cursive;letter-spacing:0.5px;}
 
-/* ===== HERO ===== */
-.hero{
-  position:relative;
-  background:var(--teal-950);
-  background-image:
-    radial-gradient(circle at 88% -10%, rgba(219,164,60,0.35), transparent 55%),
-    radial-gradient(circle at 6% 110%, rgba(193,68,45,0.28), transparent 50%);
-  color:var(--cream-50);
-  padding:calc(28px + var(--safe-top)) 20px 46px;
-  overflow:hidden;
-  border-bottom:4px solid var(--gold-500);
+/* ===== TOPBAR: pil melayang di atas, satu gaya dengan dock bawah ===== */
+:root{ --pill-h:54px; --pill-gap:10px; }
+.topbar{
+  position:sticky; top:calc(var(--pill-gap) + var(--safe-top)); z-index:40;
+  box-sizing:border-box; height:var(--pill-h);
+  margin:calc(var(--pill-gap) + var(--safe-top)) 12px 0;
+  display:flex; align-items:center; justify-content:center; gap:11px;
+  background:rgba(12,58,53,0.96);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border:1px solid rgba(219,164,60,0.35);
+  border-radius:22px;
+  padding:0 16px;
+  box-shadow:0 14px 30px -10px rgba(12,58,53,0.6);
 }
-.hero-steam{
-  position:absolute; top:-40px; right:-30px;
-  width:220px; height:220px; opacity:0.08;
-  pointer-events:none;
-}
-.hero-top{
-  display:flex; align-items:center; gap:14px; margin-bottom:22px;
-}
-.hero-top img{
-  width:52px;height:52px;border-radius:50%;
+.topbar img{
+  width:36px; height:36px; border-radius:50%;
   border:2px solid var(--gold-500);
   object-fit:cover; background:var(--cream-100); flex-shrink:0;
 }
-.hero-top .eyebrow{
-  font-size:11px; letter-spacing:2px; color:var(--gold-500); font-weight:600;
+.topbar-text{ min-width:0; }
+.topbar .eyebrow{
+  font-size:9.5px; letter-spacing:2px; color:var(--gold-500); font-weight:600; line-height:1.2;
 }
-.hero-top .brand{ font-size:15px; font-weight:700; color:var(--cream-50); }
-.hero h1{
-  font-size:clamp(42px,10vw,64px);
-  line-height:0.92;
-  margin:0 0 10px;
-  color:var(--cream-50);
+.topbar .brand{ font-size:15px; font-weight:700; color:var(--cream-50); line-height:1.2; white-space:nowrap; }
+
+/* ===== GRADASI GELAP di atas & bawah: menyamarkan menu yang lewat di belakang header & dock =====
+   Zona di belakang pil/dock PEKAT 100% (tidak ada yang tembus), baru setelah itu memudar.
+   Juga memanjang melewati tepi layar (--fade-over) agar tidak bocor saat tinggi layar berubah. */
+:root{
+  --fade-over:80px;
+  --fade-over-bot:5px;                                           /* gradasi bawah keluar frame +5px */
+  --fade-ease:20px;                                              /* panjang bagian yang memudar */
+  --fade-solid-top:calc(var(--pill-gap) + var(--safe-top) + var(--pill-h) + 2px);
+  --fade-solid-bot:calc(12px + var(--safe-bottom) + 58px + 2px); /* tinggi dock + jarak */
 }
-.hero h1 em{ font-style:normal; color:var(--gold-500); }
-.hero p{
-  margin:0; max-width:44ch;
-  color:var(--cream-100);
-  font-size:14.5px; line-height:1.55;
+body::before, body::after{
+  content:''; position:fixed; left:0; right:0; z-index:25;
+  pointer-events:none;
+}
+body::before{
+  top:calc(-1 * var(--fade-over));
+  height:calc(var(--fade-over) + var(--fade-solid-top) + var(--fade-ease));
+  background:linear-gradient(to bottom,
+    rgb(251,245,228) 0, rgb(251,245,228) calc(var(--fade-over) + var(--fade-solid-top)),
+    rgba(251,245,228,0.6) calc(var(--fade-over) + var(--fade-solid-top) + var(--fade-ease) * 0.4),
+    rgba(251,245,228,0.2) calc(var(--fade-over) + var(--fade-solid-top) + var(--fade-ease) * 0.75),
+    rgba(251,245,228,0) 100%);
+}
+body::after{
+  bottom:calc(-1 * var(--fade-over-bot));
+  height:calc(var(--fade-over-bot) + var(--fade-solid-bot) + var(--fade-ease));
+  background:linear-gradient(to top,
+    rgb(251,245,228) 0, rgb(251,245,228) calc(var(--fade-over-bot) + var(--fade-solid-bot)),
+    rgba(251,245,228,0.6) calc(var(--fade-over-bot) + var(--fade-solid-bot) + var(--fade-ease) * 0.4),
+    rgba(251,245,228,0.2) calc(var(--fade-over-bot) + var(--fade-solid-bot) + var(--fade-ease) * 0.75),
+    rgba(251,245,228,0) 100%);
 }
 
-/* ===== CATEGORY NAV ===== */
+/* ===== CATEGORY DOCK (melayang di bawah, terpisah dari isi menu) ===== */
+body{ padding-bottom:0; }
 .catnav-wrap{
-  position:sticky; top:0; z-index:20;
-  background:var(--cream-50);
-  border-bottom:1.5px solid var(--line);
-  box-shadow:0 6px 16px -10px rgba(12,58,53,0.25);
+  position:fixed; z-index:30;
+  left:50%; transform:translateX(-50%);
+  bottom:calc(12px + var(--safe-bottom));
+  width:min(calc(100% - 24px), 560px);
+  background:rgba(12,58,53,0.96);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border:1px solid rgba(219,164,60,0.35);
+  border-radius:22px;
+  padding:6px;
+  box-shadow:0 14px 30px -10px rgba(12,58,53,0.6);
 }
 .catnav{
-  display:flex; gap:8px; overflow-x:auto;
-  padding:12px 16px; scrollbar-width:none;
+  display:flex; gap:4px; overflow-x:auto;
+  padding:0; scrollbar-width:none; scroll-behavior:smooth;
 }
 .catnav::-webkit-scrollbar{display:none;}
 .catnav button{
-  flex:0 0 auto;
+  /* lebar dibagi rata -> simetris; kalau kategori banyak, dock bisa digeser */
+  flex:1 0 0; min-width:max-content;
   font-family:inherit; cursor:pointer;
-  background:var(--white);
-  border:1.5px solid var(--line);
-  color:var(--teal-800);
+  background:transparent; border:0;
+  color:var(--cream-100);
   font-weight:600; font-size:13px;
-  padding:9px 16px; border-radius:100px;
-  white-space:nowrap;
-  transition:background .15s, color .15s, border-color .15s;
+  padding:0 6px; min-height:44px;
+  border-radius:16px;
+  white-space:nowrap; text-align:center;
+  transition:background .2s, color .2s;
 }
 .catnav button.active{
-  background:var(--teal-950); border-color:var(--teal-950); color:var(--cream-50);
+  background:var(--gold-500); color:var(--teal-950); font-weight:700;
 }
 
 /* ===== MAIN ===== */
-main{ max-width:1100px; margin:0 auto; padding:24px 16px calc(60px + var(--safe-bottom)); }
-.cat-section{ margin-bottom:38px; scroll-margin-top:70px; }
-.cat-heading{
-  display:flex; align-items:baseline; gap:12px;
-  margin:0 0 16px;
-}
-.cat-heading h2{
-  font-size:30px; color:var(--teal-950); margin:0;
-}
-.cat-heading .count{
-  font-size:12px; color:var(--ink-600); font-weight:600;
-  background:var(--gold-100); border:1px solid var(--line);
-  padding:3px 10px; border-radius:100px;
-}
-
+main{ max-width:1100px; margin:0 auto; padding:24px 16px calc(80px + var(--safe-bottom)); }
+.cat-section{ margin-bottom:0; }
+.cat-section.is-hidden{ display:none; }
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(160px,1fr));
@@ -195,11 +207,27 @@ main.no-anim .item-card{ animation:none; opacity:1; }
 }
 .item-photo.placeholder{
   display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(155deg, var(--teal-700), var(--teal-950));
+  background:var(--white);
   animation:none;
 }
-.item-photo.placeholder svg{ width:44%; height:44%; opacity:0.85; }
 .item-photo.placeholder::after{ content:none; }
+.nophoto-stamp{
+  --stamp:#b3553f;
+  transform:rotate(-5deg);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:12px 16px 11px;
+  color:var(--stamp);
+  border:2px solid var(--stamp);
+  border-radius:14px;
+  outline:1px dashed var(--stamp); outline-offset:-7px;
+  background:rgba(179,85,63,0.05);
+  opacity:0.78;
+}
+.nophoto-stamp svg{ width:24px; height:24px; opacity:0.9; }
+.nophoto-stamp span{
+  font-size:9.5px; font-weight:700; line-height:1.45;
+  letter-spacing:1.2px; text-transform:uppercase; text-align:center;
+}
 
 /* ===== HABIS (sold out) ===== */
 .item-card.sold-out .item-photo img{
@@ -224,16 +252,18 @@ main.no-anim .item-card{ animation:none; opacity:1; }
   padding:11px 12px 13px;
   margin-top:-14px;
   position:relative; z-index:1;
-  display:flex; flex-direction:column; gap:6px; flex:1;
+  display:flex; flex-direction:column; gap:2px; flex:1;
 }
 .item-name{
   font-size:14.5px; font-weight:700; color:var(--ink-900);
   line-height:1.3;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  overflow:hidden;
 }
 .item-price{
-  margin-top:auto;
+  margin-top:0;
   font-family:'Bebas Neue',cursive; letter-spacing:0.4px;
-  font-size:19px; color:var(--rust-700);
+  font-size:23px; line-height:1; color:var(--rust-700);
 }
 .item-price::before{ content:'Rp '; font-size:12px; color:var(--ink-600); font-family:'Poppins',sans-serif; font-weight:600; }
 
@@ -249,15 +279,14 @@ main.no-anim .item-card{ animation:none; opacity:1; }
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* ===== FOOTER ===== */
-footer{
-  text-align:center; padding:26px 20px calc(28px + var(--safe-bottom));
-  color:var(--ink-600); font-size:12px;
-  border-top:1.5px dashed var(--line);
-  max-width:1100px; margin:0 auto;
-}
-footer strong{ color:var(--teal-800); }
 
+/* ===== MOBILE: grid rapat ===== */
+@media (max-width:639px){
+  main{ padding-top:16px; }
+  .grid{ gap:12px; }
+  .item-body{ padding:10px 10px 12px; }
+  .item-name{ font-size:13.5px; }
+}
 @media (min-width:640px){
   .grid{ grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); }
 }
@@ -265,23 +294,14 @@ footer strong{ color:var(--teal-800); }
 </head>
 <body>
 
-<header class="hero">
-  <svg class="hero-steam" viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="3">
-    <path d="M30 90 Q20 60 35 45 Q50 30 40 10" stroke-linecap="round"/>
-    <path d="M55 90 Q45 65 58 48 Q70 32 62 5" stroke-linecap="round"/>
-    <path d="M78 90 Q68 62 80 44" stroke-linecap="round"/>
-  </svg>
-  <div class="hero-top">
-    <img src="ikon.png" alt="Logo Warmindo Sandaga" onerror="this.style.display='none'"/>
-    <div>
-      <div class="eyebrow">DAFTAR MENU</div>
-      <div class="brand">Warmindo Sandaga</div>
-    </div>
+<div class="topbar" id="topbar">
+  <img src="ikon.png" alt="Logo Warmindo Sandaga" onerror="this.style.display='none'"/>
+  <div class="topbar-text">
+    <div class="eyebrow">DAFTAR MENU</div>
+    <div class="brand">Warmindo Sandaga</div>
   </div>
-  <h1>lapar &amp; haus? <em>lihat</em><br/>menunya dulu.</h1>
-  <p>Semua menu & harga udah paling update, 
-    <p></p>kalau mau pesan bisa ke admin miniso atau langsung ke kasir kedai :)</p>
-</header>
+</div>
+
 
 <div class="catnav-wrap">
   <nav class="catnav" id="catNav"></nav>
@@ -294,9 +314,6 @@ footer strong{ color:var(--teal-800); }
   </div>
 </main>
 
-<footer>
-  Menu diperbarui otomatis langsung dari kasir · <strong>Warmindo Sandaga</strong>
-</footer>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -332,12 +349,7 @@ function formatRupiah(n){
   return n.toLocaleString('id-ID');
 }
 
-const PLACEHOLDER_ICON = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="#fbf5e4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4 8c0-2.2 3.6-4 8-4s8 1.8 8 4-3.6 4-8 4-8-1.8-8-4Z"/>
-    <path d="M4 8v9c0 2.2 3.6 4 8 4s8-1.8 8-4V8"/>
-    <path d="M8 4.5c0 1.5 1 3 4 3s4-1.5 4-3"/>
-  </svg>`;
+const PLACEHOLDER_ICON = `<div class="nophoto-stamp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h2.5l1.5-2h5l1.5 2H20v10H4z"/><circle cx="12" cy="13" r="3"/><path d="M3 3l18 18"/></svg><span>Gambar belum<br>di-upload admin</span></div>`;
 
 let menuItems = [];
 let activeCategory = null;
@@ -347,21 +359,49 @@ let menuPhotoCache = {};      // {itemId: url}    -> sudah diambil & ada foto
 let fetchingPhotoIds = new Set();
 let hasRenderedMenu = false;
 
+function centerActiveTab(smooth){
+  const nav = document.getElementById('catNav');
+  const btn = nav.querySelector('button.active');
+  if(!btn) return;
+  const left = btn.offsetLeft - (nav.clientWidth - btn.offsetWidth)/2;
+  nav.scrollTo({ left: Math.max(0,left), behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function currentCategories(){
+  return [...new Set(menuItems.map(m=>m.category).filter(Boolean))];
+}
+
+/* Tampilkan HANYA satu kategori; kategori lain disembunyikan. */
+function showCategory(cat){
+  if(cat === activeCategory) return;
+  activeCategory = cat;
+  const main = document.getElementById('main');
+  main.classList.remove('no-anim');   // biar kartu kategori baru muncul dengan animasi
+  document.querySelectorAll('#catNav button').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
+  document.querySelectorAll('.cat-section[data-cat]').forEach(sec=>{
+    sec.classList.toggle('is-hidden', sec.dataset.cat !== cat);
+  });
+  centerActiveTab(true);
+  // kalau pengunjung sedang scroll jauh ke bawah, mulai dari awal daftar kategori baru
+  const bar = document.getElementById('topbar');
+  const barBottom = bar ? bar.getBoundingClientRect().bottom : 0;
+  const top = main.getBoundingClientRect().top + window.scrollY - barBottom - 10;
+  if(window.scrollY > top) window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+  prioritizeCategory(cat);
+  pumpPhotoQueue();
+}
+
 function renderCatNav(cats){
   const nav = document.getElementById('catNav');
+  nav.style.scrollBehavior = 'auto';
   nav.innerHTML = cats.map(c =>
     `<button data-cat="${escapeHtml(c)}" class="${c===activeCategory?'active':''}">${escapeHtml(c)}</button>`
   ).join('');
   nav.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      activeCategory = btn.dataset.cat;
-      renderCatNav(cats);
-      prioritizeCategory(activeCategory);
-      pumpPhotoQueue();
-      const target = document.getElementById('cat-'+slugify(activeCategory));
-      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
-    });
+    btn.addEventListener('click', ()=> showCategory(btn.dataset.cat));
   });
+  centerActiveTab(false);
+  nav.style.scrollBehavior = '';
 }
 
 function slugify(s){
@@ -492,29 +532,31 @@ function pumpPhotoQueue(){
   }
 }
 
-// Susun antrean sesuai urutan di layar: kategori pertama -> item pertama, dst.
-function fetchMissingPhotos(cats){
-  const ordered = [];
+// Urutan: kategori aktif dulu, lalu kategori lain (di-preload di belakang supaya saat
+// pindah tab fotonya sudah siap).
+function orderedItems(){
+  const cats = currentCategories();
+  const seq = [activeCategory, ...cats.filter(c=>c!==activeCategory)].filter(Boolean);
+  const list = [];
+  seq.forEach(cat=> menuItems.forEach(item=>{ if(item.category===cat) list.push(item); }));
+  return list;
+}
+
+function fetchMissingPhotos(){
+  const all = orderedItems();
   photoOrder = {};
-  let n = 0;
-  cats.forEach(cat=>{
-    menuItems.forEach(item=>{
-      if(item.category !== cat) return;
-      photoOrder[item.id] = n++;
-      if(item.imageUrl) return; // foto lama sudah tampil langsung
-      if(menuPhotoCache[item.id] !== undefined) return;
-      ordered.push(item);
-    });
-  });
-  photoQueue = ordered;
+  all.forEach((item,i)=>{ photoOrder[item.id] = i; });
+  photoQueue = all.filter(item=> !item.imageUrl && menuPhotoCache[item.id] === undefined);
   pumpPhotoQueue();
 }
 
-// Saat user pindah kategori lewat tombol nav, foto kategori itu didahulukan.
+// Saat pindah kategori, foto kategori itu didahulukan (fetch & urutan tampil).
 function prioritizeCategory(cat){
-  const first = photoQueue.filter(i=>i.category===cat);
-  if(!first.length) return;
-  photoQueue = [...first, ...photoQueue.filter(i=>i.category!==cat)];
+  const all = orderedItems();
+  photoOrder = {};
+  all.forEach((item,i)=>{ photoOrder[item.id] = i; });
+  photoQueue = all.filter(item=> photoQueue.some(q=>q.id===item.id));
+  revealQueue.sort((x,y)=>x.order - y.order);
 }
 
 function renderMenu(){
@@ -532,11 +574,7 @@ function renderMenu(){
   main.innerHTML = cats.map((cat, catIndex)=>{
     const items = menuItems.filter(m=>m.category===cat);
     return `
-      <section class="cat-section" id="cat-${slugify(cat)}" style="animation-delay:${Math.min(catIndex*80,320)}ms">
-        <div class="cat-heading">
-          <h2>${escapeHtml(cat)}</h2>
-          <span class="count">${items.length} menu</span>
-        </div>
+      <section class="cat-section${cat===activeCategory?'':' is-hidden'}" id="cat-${slugify(cat)}" data-cat="${escapeHtml(cat)}">
         <div class="grid">
           ${items.map((item, i)=>itemCard(item, i)).join('')}
         </div>
@@ -545,7 +583,7 @@ function renderMenu(){
 
   main.classList.toggle('no-anim', hasRenderedMenu);
   hasRenderedMenu = true;
-  fetchMissingPhotos(cats);
+  fetchMissingPhotos();
 }
 
 /* ============ REALTIME: MENU (read-only, sinkron dengan kasir) =============
