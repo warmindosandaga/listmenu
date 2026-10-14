@@ -488,8 +488,9 @@ function itemCard(item, indexInCategory){
 
 /* ===== URUTAN MENU =====
    1) yang tersedia di atas, yang HABIS di bawah
-   2) di tiap kelompok: yang sudah ada gambarnya dulu, baru yang belum
-   3) sisanya urut abjad.
+   2) di tiap kelompok: menu BARU (bestempel) paling atas
+   3) lalu yang sudah ada gambarnya dulu, baru yang belum
+   4) sisanya urut abjad.
    Status foto baru diketahui setelah fetch selesai, jadi sebelum itu dianggap "ada foto";
    begitu semua foto selesai dicek, kartu dirapikan SEKALI (resortGrids). */
 function hasPhoto(item){
@@ -498,6 +499,7 @@ function hasPhoto(item){
 }
 function compareItems(a,b){
   return (a.soldOut?1:0) - (b.soldOut?1:0)
+      || Number(!!b.isNew) - Number(!!a.isNew)
       || Number(hasPhoto(b)) - Number(hasPhoto(a))
       || String(a.name||'').localeCompare(String(b.name||''), 'id', {sensitivity:'base'});
 }
